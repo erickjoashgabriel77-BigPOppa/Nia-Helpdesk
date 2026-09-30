@@ -1,212 +1,281 @@
-import os
 import base64
+import os
 import streamlit as st
-from config import ADMIN_PASSKEY
-from utils import get_employee_by_id
 
-def inject_custom_design():
-    st.markdown("""
-    <style>
-        /* Hide sidebar on login screen */
-        [data-testid="stSidebar"] {
-            display: none;
-        }
-
-        /* Dark background theme */
-        .stApp {
-            background-color: #030712 !important;
-            color: #f8fafc;
-        }
-
-        /* Center container layout */
-        .block-container {
-            max-width: 1000px !important;
-            padding-top: 2.5rem !important;
-            padding-bottom: 2rem !important;
-        }
-
-        /* AI Studio Logo Card Styling */
-        .hero-logo-box {
-            width: 130px;
-            height: 130px;
-            background: #09131d;
-            border: 2px solid #059669;
-            border-radius: 20px;
-            box-shadow: 0 0 35px rgba(16, 185, 129, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem auto;
-            padding: 12px;
-        }
-
-        .hero-logo-img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 10px;
-        }
-
-        /* Pill Badge Styling */
-        .pill-badge {
-            display: inline-block;
-            padding: 4px 14px;
-            border-radius: 9999px;
-            background-color: rgba(16, 185, 129, 0.12);
-            border: 1px solid rgba(16, 185, 129, 0.35);
-            color: #10b981;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        /* Modernized Cards */
-        div[data-testid="stVerticalBlock"] > div[style*="border"] {
-            background: #0b0f19 !important;
-            border: 1px solid #1e293b !important;
-            border-radius: 16px !important;
-            padding: 24px !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
-        }
-
-        /* Text Customization */
-        .main-title {
-            text-align: center;
-            font-size: 2.3rem;
-            font-weight: 800;
-            color: #ffffff;
-            margin-bottom: 0px;
-            letter-spacing: -0.5px;
-        }
-
-        .sub-title {
-            text-align: center;
-            font-size: 1.35rem;
-            font-weight: 700;
-            color: #10b981;
-            margin-top: 4px;
-            margin-bottom: 12px;
-        }
-
-        .description-text {
-            text-align: center;
-            color: #94a3b8;
-            font-size: 0.95rem;
-            margin-bottom: 2rem;
-            line-height: 1.5;
-        }
-
-        /* Green Primary Buttons */
-        .stButton > button[kind="primary"] {
-            background-color: #059669 !important;
-            border: none !important;
-            border-radius: 8px !important;
-            font-weight: 600 !important;
-            padding: 0.6rem 1rem !important;
-        }
-
-        .stButton > button[kind="primary"]:hover {
-            background-color: #10b981 !important;
-            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
-        }
-    </style>
-    """, unsafe_allow_html=True)
 
 def render_login_screen(logo_path=None):
-    """Renders the NIA Quirino IMO IT Help Desk homepage and login screen."""
-    
-    # --- CENTERED HERO / HEADER BRANDING ---
-    st.markdown("<div style='text-align: center; margin-top: -15px; margin-bottom: 25px;'>", unsafe_allow_html=True)
-    
-    # Glowing Logo Box
+    """Renders the single-screen homepage for Quirino Irrigation Management Office IT Help Desk System.
+
+    Includes full CSS overrides for Streamlit Cloud and local deployments to hide top headers and toolbars.
+    """
+
+    # --- CUSTOM CSS: HIDE ALL STREAMLIT TOP HEADERS & TOOLBARS (LOCAL & STREAMLIT CLOUD) ---
+    st.markdown(
+        """
+        <style>
+        /* Hide all Streamlit top headers, navbars, toolbars, decoration lines, and sidebar controls */
+        header,
+        header[data-testid="stHeader"],
+        div[data-testid="stHeader"],
+        div[data-testid="stDecoration"],
+        div[data-testid="stToolbar"],
+        div[data-testid="stHeaderNav"],
+        div[data-testid="stStatusWidget"],
+        [data-testid="collapsedControl"],
+        #MainMenu,
+        footer {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        /* Disable page-level scrolling */
+        html, body, [data-testid="stAppViewContainer"], .main {
+            overflow: hidden !important;
+        }
+
+        /* Adjust top container spacing */
+        .block-container {
+            max-width: 980px !important;
+            padding-top: 1.5rem !important;
+            padding-bottom: 1rem !important;
+            padding-left: 1rem !important;
+            padding-right: 1rem !important;
+        }
+
+        /* Centered Title Section */
+        .header-container {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .main-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #ffffff;
+            margin-top: 6px;
+            margin-bottom: 2px;
+            letter-spacing: -0.5px;
+        }
+        .subtitle {
+            font-size: 18px;
+            font-weight: 600;
+            color: #10B981;
+        }
+
+        /* Logo Card Container */
+        .hero-logo-box {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        .hero-logo-card {
+            background: rgba(15, 23, 42, 0.85);
+            border: 2px solid #10B981;
+            border-radius: 14px;
+            padding: 8px;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+        }
+
+        /* UNIFIED TAB CONTAINER CARD */
+        div[data-testid="stTabs"] {
+            background-color: rgba(15, 23, 42, 0.88) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            border-radius: 12px !important;
+            box-shadow: 0px 15px 35px rgba(0, 0, 0, 0.5) !important;
+            backdrop-filter: blur(12px);
+            overflow: hidden !important;
+        }
+
+        /* OUTER TAB BAR HEADER */
+        .stTabs [data-baseweb="tab-list"] {
+            background-color: rgba(0, 0, 0, 0.35) !important;
+            padding: 6px 10px 0px 10px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+            gap: 8px !important;
+        }
+
+        .stTabs [data-baseweb="tab"] {
+            height: 40px !important;
+            border-radius: 8px 8px 0px 0px !important;
+            padding: 0px 18px !important;
+            background: transparent !important;
+        }
+
+        .stTabs [data-baseweb="tab"] p {
+            color: #94A3B8 !important;
+            font-size: 14px !important;
+            font-weight: 600 !important;
+        }
+
+        /* ACTIVE TAB HIGHLIGHT */
+        .stTabs [aria-selected="true"] {
+            background-color: rgba(16, 185, 129, 0.2) !important;
+            border-bottom: 3px solid #10B981 !important;
+        }
+
+        .stTabs [aria-selected="true"] p {
+            color: #FFFFFF !important;
+            font-weight: 700 !important;
+        }
+
+        /* TAB PANEL CONTENT AREA */
+        .stTabs [data-baseweb="tab-panel"] {
+            padding: 20px 24px 22px 24px !important;
+        }
+
+        /* Green Action Button */
+        .stButton > button[kind="primary"] {
+            width: 100% !important;
+            background-color: #0d8a57 !important;
+            color: white !important;
+            font-weight: 700 !important;
+            font-size: 14.5px !important;
+            padding: 9px !important;
+            border-radius: 6px !important;
+            border: none !important;
+            transition: all 0.2s ease !important;
+            margin-top: 10px !important;
+        }
+        .stButton > button[kind="primary"]:hover {
+            background-color: #10b981 !important;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4) !important;
+        }
+
+        /* Card Subtext */
+        .card-footer-text {
+            font-size: 12px;
+            color: #94A3B8;
+            margin-top: 16px;
+            line-height: 1.4;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 10px;
+        }
+
+        /* Bottom Footer */
+        .page-footer {
+            text-align: center;
+            font-size: 12.5px;
+            color: #D0E7DB !important;
+            margin-top: 20px;
+            padding-bottom: 8px;
+        }
+        .page-footer a {
+            color: #34D399 !important;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # --- LOGO & HEADER ---
     if logo_path and os.path.exists(logo_path):
         with open(logo_path, "rb") as f:
             logo_b64 = base64.b64encode(f.read()).decode("utf-8")
         st.markdown(
             f"""
-            <div style="display: flex; justify-content: center; margin-bottom: 16px;">
-                <div style="background: rgba(15, 23, 42, 0.85); border: 2px solid #10B981; border-radius: 18px; padding: 14px; box-shadow: 0 0 25px rgba(16, 185, 129, 0.35);">
-                    <img src="data:image/png;base64,{logo_b64}" style="width: 75px; height: 75px; object-fit: contain; display: block;">
+            <div class="hero-logo-box">
+                <div class="hero-logo-card">
+                    <img src="data:image/png;base64,{logo_b64}" style="width: 65px; height: 65px; object-fit: contain; display: block;">
                 </div>
             </div>
             """,
-            unsafe_allow_html=True
+            unsafe_allow_html=True,
         )
 
-    # Title & Badge Section
     st.markdown(
         """
-            <div style="display: inline-block; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 20px; padding: 4px 16px; color: #34D399; font-size: 0.85rem; font-weight: 600; margin-bottom: 12px;">
-                🏛️ National Irrigation Administration
-            </div>
-            <h1 style="font-size: 2.4rem; font-weight: 800; color: #FFFFFF; margin: 0 0 6px 0; letter-spacing: -0.5px;">
-                Quirino Irrigation Management Office
-            </h1>
-            <h2 style="font-size: 1.45rem; font-weight: 700; color: #10B981; margin: 0 0 14px 0;">
-                IT Help Desk System
-            </h2>
-            <p style="max-width: 680px; margin: 0 auto; color: #94A3B8; font-size: 0.95rem; line-height: 1.5;">
-                Centralized technical support, job dispatching, and resolution portal for 
-                <strong style="color: #F8FAFC;">Engineering & Operations (EOS)</strong> and 
-                <strong style="color: #F8FAFC;">Administrative & Finance (AFS)</strong>.
-            </p>
+        <div class="header-container">
+            <div class="main-title">Quirino Irrigation Management Office</div>
+            <div class="subtitle">IT Help Desk System</div>
         </div>
         """,
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
 
-    st.markdown("---")
+    # --- UNIFIED TABBED LOGIN CARD ---
+    col_left, col_center, col_right = st.columns([1, 2.2, 1])
 
-    col1, col2 = st.columns(2, gap="large")
+    with col_center:
+        tab_client, tab_admin = st.tabs(
+            ["👤 Employee / Client Portal", "🛡️ Administrator / IT Portal"]
+        )
 
-    # --- CLIENT / EMPLOYEE PORTAL CARD ---
-    with col1:
-        with st.container(border=True):
+        # --- TAB 1: EMPLOYEE / CLIENT PORTAL ---
+        with tab_client:
             st.markdown(
-                """
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="background: rgba(16, 185, 129, 0.15); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid rgba(16, 185, 129, 0.3);">
-                        👤
-                    </div>
-                    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34D399; font-size: 0.75rem; font-weight: 700; padding: 3px 12px; border-radius: 12px;">
-                        Client Portal
-                    </span>
-                </div>
-                <h3 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #FFFFFF; font-weight: 700;">Client / Employee</h3>
-                <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4;">
-                    For department employees and personnel requesting technical assistance for hardware, software, networking, printers, or user accounts.
-                </p>
-                """,
-                unsafe_allow_html=True
+                "<h3 style='margin-top:0; margin-bottom: 4px; font-size: 18px; color: #FFFFFF;'>Client / Employee</h3>",
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "For department employees and personnel assistance for equipment, products, or user accounts."
             )
 
             employees = st.session_state.get("employees", [])
+
             if not employees:
-                st.warning("No employees registered in system. Please contact IT Admin.")
+                st.warning(
+                    "No registered employees found in system. Please contact IT Admin."
+                )
             else:
-                tab_dropdown, tab_id = st.tabs(["📋 Select Profile", "🆔 Enter ID Number"])
-                
+                tab_dropdown, tab_id = st.tabs(
+                    ["📋 Select Profile", "🆔 Enter ID Number"]
+                )
+
                 selected_client = None
 
                 # Option 1: Dropdown Profile Select
                 with tab_dropdown:
-                    emp_options = {f"{e['name']} ({e['id']})": e for e in employees}
-                    selected_emp_label = st.selectbox("Select Your Profile:", list(emp_options.keys()), key="select_emp_dropdown")
-                    if st.button("Login as Client", type="primary", use_container_width=True, key="btn_login_dropdown"):
+                    emp_options = {
+                        f"{e['name']} ({e['id']})": e for e in employees
+                    }
+                    selected_emp_label = st.selectbox(
+                        "Select Your Profile:",
+                        list(emp_options.keys()),
+                        key="select_emp_dropdown",
+                    )
+                    if st.button(
+                        "Log in as Employee",
+                        type="primary",
+                        use_container_width=True,
+                        key="btn_login_dropdown",
+                    ):
                         selected_client = emp_options[selected_emp_label]
 
-                # Option 2: Employee ID Number Search
+                # Option 2: Employee ID Search
                 with tab_id:
-                    input_id = st.text_input("Enter Your Employee ID:", placeholder="e.g., EMP-EOS-001", key="input_emp_id").strip()
-                    if st.button("Login via ID", type="primary", use_container_width=True, key="btn_login_id"):
+                    input_id = st.text_input(
+                        "Enter Your Employee ID:",
+                        placeholder="e.g., EMP-EOS-001",
+                        key="input_emp_id",
+                    ).strip()
+                    if st.button(
+                        "Log in via ID",
+                        type="primary",
+                        use_container_width=True,
+                        key="btn_login_id",
+                    ):
                         if input_id:
-                            found_emp = next((e for e in employees if str(e.get("id", "")).strip().lower() == input_id.lower()), None)
+                            found_emp = next(
+                                (
+                                    e
+                                    for e in employees
+                                    if str(e.get("id", "")).strip().lower()
+                                    == input_id.lower()
+                                ),
+                                None,
+                            )
                             if found_emp:
                                 selected_client = found_emp
                             else:
-                                st.error(f"❌ Employee ID '{input_id}' not found. Please check your ID number.")
+                                st.error(
+                                    f"❌ Employee ID '{input_id}' not found."
+                                )
                         else:
-                            st.warning("⚠️ Please enter your Employee ID number.")
+                            st.warning("⚠️ Please enter your Employee ID.")
 
                 if selected_client:
                     st.session_state.logged_in_employee = selected_client
@@ -215,60 +284,60 @@ def render_login_screen(logo_path=None):
 
             st.markdown(
                 """
-                <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 0.82rem; color: #94A3B8;">
-                    <div style="margin-bottom: 6px;">✔ Submit technical support requests</div>
-                    <div>✔ Track ticket status & rate completed work</div>
+                <div class="card-footer-text">
+                    Centralized technical support, job dispatching and resolution portal for Engineering and Administrative & Finance (AFS).
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
-    # --- ADMINISTRATOR / IT PORTAL CARD ---
-    with col2:
-        with st.container(border=True):
+        # --- TAB 2: ADMINISTRATOR PORTAL ---
+        with tab_admin:
             st.markdown(
-                """
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <div style="background: rgba(59, 130, 246, 0.15); width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid rgba(59, 130, 246, 0.3);">
-                        🛡️
-                    </div>
-                    <span style="background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.4); color: #60A5FA; font-size: 0.75rem; font-weight: 700; padding: 3px 12px; border-radius: 12px;">
-                        Admin & IT Staff
-                    </span>
-                </div>
-                <h3 style="margin: 0 0 6px 0; font-size: 1.35rem; color: #FFFFFF; font-weight: 700;">Administrator / IT</h3>
-                <p style="color: #94A3B8; font-size: 0.85rem; margin-bottom: 16px; line-height: 1.4;">
-                    For IT Support team members, dispatch coordinators, and system administrators managing tickets across EOS and AFS divisions.
-                </p>
-                """,
-                unsafe_allow_html=True
+                "<h3 style='margin-top:0; margin-bottom: 4px; font-size: 18px; color: #FFFFFF;'>Administrator / IT Access</h3>",
+                unsafe_allow_html=True,
+            )
+            st.caption(
+                "For IT personnel and system administrators managing ticket queues."
             )
 
             with st.form("admin_login_form", border=False):
-                entered_passkey = st.text_input("Enter IT Admin Passkey:", type="password", placeholder="Enter your passkey...")
-                submit_admin = st.form_submit_button("Login as IT Admin", type="primary", use_container_width=True)
+                entered_passkey = st.text_input(
+                    "Enter Passkey / Password:",
+                    type="password",
+                    placeholder="Enter admin passkey...",
+                )
+                submit_admin = st.form_submit_button(
+                    "Log in as Administrator",
+                    type="primary",
+                    use_container_width=True,
+                )
 
                 if submit_admin:
                     matched_admin = next(
-                        (adm for adm in st.session_state.get("admin_users", []) if adm.get("passkey") == entered_passkey),
-                        None
+                        (
+                            adm
+                            for adm in st.session_state.get("admin_users", [])
+                            if adm.get("passkey") == entered_passkey
+                        ),
+                        None,
                     )
 
                     if matched_admin:
                         st.session_state.is_admin_authenticated = True
                         st.session_state.logged_in_admin = matched_admin
                         st.session_state.current_role = "admin"
-                        st.success(f"Welcome back, **{matched_admin['name']}**!")
                         st.rerun()
                     else:
                         st.error("❌ Invalid Passkey. Please check your credentials.")
 
-            st.markdown(
-                """
-                <div style="margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 0.82rem; color: #94A3B8;">
-                    <div style="margin-bottom: 6px;">✔ Central ticketing dashboard & status workflows</div>
-                    <div>✔ Search by Ticket ID, requester, or category</div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+    # --- FOOTER ---
+    st.markdown(
+        """
+        <div class="page-footer">
+            Version 2.0 | <a href="#">IT Admin Login</a> | <a href="#">Knowledge Base</a><br>
+            © 2026 Quirino Irrigation Management Office. All Rights Reserved.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

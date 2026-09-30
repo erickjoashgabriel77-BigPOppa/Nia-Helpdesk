@@ -1,0 +1,10 @@
+[client]
+toolbarMode = "minimal" # Options: "auto", "minimized", "minimal", or "off"
+showErrorDetails = false
+
+[theme]
+base = "dark"
+primaryColor = "#10B981"
+backgroundColor = "#0b1920"
+secondaryBackgroundColor = "#0f172a"
+textColor = "#FFFFFF"
