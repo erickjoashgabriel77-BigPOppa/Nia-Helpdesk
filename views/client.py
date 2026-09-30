@@ -1,7 +1,7 @@
 import datetime
 import streamlit as st
 import streamlit.components.v1 as components
-from utils import save_local_data, generate_printable_ticket_html
+from utils import save_local_data, generate_printable_ticket_html, generate_official_ticket_slip
 
 def render_client_views(selected_menu):
     """Renders client-side ticket submission, tracking, rating, and printing."""
@@ -95,18 +95,30 @@ def render_client_views(selected_menu):
                 st.write(f"**Resolution Notes:** {ticket.get('resolution_notes', 'N/A')}")
 
                 st.markdown("---")
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
 
                 with col1:
                     if ticket.get("status") == "Pending":
-                        if st.button("❌ Cancel Ticket", key=f"cancel_{ticket['id']}"):
+                        if st.button("❌ Cancel Ticket", key=f"cancel_{ticket['id']}", use_container_width=True):
                             ticket["status"] = "Cancelled"
                             save_local_data()
                             st.warning(f"Ticket {ticket['id']} has been cancelled.")
                             st.rerun()
 
                 with col2:
-                    if st.button("🖨️ Print Service Slip", key=f"print_{ticket['id']}"):
+                    docx_buffer = generate_official_ticket_slip(ticket)
+                    st.download_button(
+                        label="📄 Download Official Ticket (.docx)",
+                        data=docx_buffer,
+                        file_name=f"IT_Service_Ticket_{ticket.get('id', 'DOC')}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key=f"docx_client_{ticket['id']}",
+                        type="primary",
+                        use_container_width=True
+                    )
+
+                with col3:
+                    if st.button("🖨️ Print Preview", key=f"print_{ticket['id']}", use_container_width=True):
                         key_state = f"show_print_{ticket['id']}"
                         st.session_state[key_state] = not st.session_state.get(key_state, False)
 

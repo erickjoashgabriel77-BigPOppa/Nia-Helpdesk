@@ -1,7 +1,7 @@
 import streamlit as st
 import streamlit.components.v1 as components
 from config import EOS_SECTION, AFS_SECTION, ORGANIZATIONAL_UNITS, IT_TECHNICIANS
-from utils import save_local_data, generate_printable_ticket_html
+from utils import save_local_data, generate_printable_ticket_html, generate_official_ticket_slip
 
 def render_admin_views(selected_menu):
     """Renders IT admin dashboard for ticket management, employee directory, and admin management."""
@@ -77,8 +77,24 @@ def render_admin_views(selected_menu):
                         st.success(f"Ticket {ticket['id']} updated successfully!")
                         st.rerun()
 
-                if st.button("🖨️ Print Service Slip", key=f"print_admin_{ticket['id']}"):
-                    st.session_state[f"show_admin_print_{ticket['id']}"] = not st.session_state.get(f"show_admin_print_{ticket['id']}", False)
+                st.markdown("---")
+                btn_col1, btn_col2 = st.columns(2)
+
+                with btn_col1:
+                    docx_buffer = generate_official_ticket_slip(ticket)
+                    st.download_button(
+                        label="📄 Download Official Ticket (.docx)",
+                        data=docx_buffer,
+                        file_name=f"IT_Service_Ticket_{ticket.get('id', 'DOC')}.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        key=f"docx_admin_{ticket['id']}",
+                        type="primary",
+                        use_container_width=True
+                    )
+
+                with btn_col2:
+                    if st.button("🖨️ Print Service Slip Preview", key=f"print_admin_{ticket['id']}", use_container_width=True):
+                        st.session_state[f"show_admin_print_{ticket['id']}"] = not st.session_state.get(f"show_admin_print_{ticket['id']}", False)
 
                 if st.session_state.get(f"show_admin_print_{ticket['id']}", False):
                     st.markdown("---")
@@ -91,10 +107,7 @@ def render_admin_views(selected_menu):
         
         with st.expander("➕ Register New Employee", expanded=False):
             emp_name = st.text_input("Full Name (e.g., Juan Dela Cruz)")
-            
-            # Direct encodable text input for Designation
             emp_designation = st.text_input("Designation / Position Title (e.g., Engineer A, Admin Aide VI)")
-
             emp_section = st.selectbox("Section", [EOS_SECTION, AFS_SECTION])
             available_units = ORGANIZATIONAL_UNITS.get(emp_section, [])
             emp_unit = st.selectbox("Unit / Division", available_units)
@@ -136,11 +149,8 @@ def render_admin_views(selected_menu):
         with st.expander("➕ Add New IT Admin Personnel", expanded=False):
             with st.form("add_admin_form", clear_on_submit=True):
                 admin_name = st.text_input("Admin / Technician Name (e.g., Alex Reyes)")
-                
-                # Position strictly set to Computer Maintenance Technologist I
                 st.text_input("Position / Designation:", value="Computer Maintenance Technologist I", disabled=True)
                 admin_role = "Computer Maintenance Technologist I"
-                
                 admin_key = st.text_input("Assign Access Passkey / Password:", type="password")
                 
                 if st.form_submit_button("Create Admin Account", type="primary"):

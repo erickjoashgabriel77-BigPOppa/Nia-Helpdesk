@@ -5,3 +5,4 @@ streamlit-autorefresh
 python-dotenv
 requests
 supabase
+docxtpl
