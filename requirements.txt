@@ -4,3 +4,4 @@ pandas
 streamlit-autorefresh
 python-dotenv
 requests
+supabase
