@@ -1,8 +1,12 @@
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import streamlit as st
 from config import ADMIN_PASSKEY
-from utils import get_employee_by_id
 
+from utils import get_employee_by_id
 def inject_custom_design():
     st.markdown("""
     <style>
