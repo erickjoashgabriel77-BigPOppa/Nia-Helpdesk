@@ -1,0 +1,71 @@
+{
+    "employees": [
+        {
+            "id": "EMP-EOS-001",
+            "name": "Engr. Juan Dela Cruz",
+            "section": "Engineering and Operations Section (EOS)",
+            "unit": "Construction Management Unit",
+            "email": "j.delacruz@agency.gov",
+            "created_at": "2026-01-15"
+        },
+        {
+            "id": "EMP-AFS-003",
+            "name": "Ricardo Gomez",
+            "section": "Administration and Finance Section (AFS)",
+            "unit": "Finance Section",
+            "email": "r.gomez@agency.gov",
+            "created_at": "2026-03-01"
+        }
+    ],
+    "tickets": [
+        {
+            "id": "TIC-108",
+            "employee_id": "EMP-EOS-001",
+            "employee_name": "Engr. Juan Dela Cruz",
+            "section": "Engineering and Operations Section (EOS)",
+            "unit": "Construction Management Unit",
+            "category": "Hardware / Workstation",
+            "description": "hshshshhdhdhdhdhhdhdhdhudududu",
+            "status": "Cancelled",
+            "date": "2026-09-29",
+            "assigned_tech": "Unassigned",
+            "resolution_notes": "Pending inspection by IT staff.",
+            "rating": null,
+            "feedback": ""
+        },
+        {
+            "id": "TIC-107",
+            "employee_id": "EMP-EOS-001",
+            "employee_name": "Engr. Juan Dela Cruz",
+            "section": "Engineering and Operations Section (EOS)",
+            "unit": "Construction Management Unit",
+            "category": "Hardware / Workstation",
+            "description": "sksjdhdbuxjsksnsndjdjdjjdjd",
+            "status": "Cancelled",
+            "date": "2026-09-29",
+            "assigned_tech": "Unassigned",
+            "resolution_notes": "Pending inspection by IT staff.",
+            "rating": null,
+            "feedback": ""
+        },
+        {
+            "id": "TIC-EOS-106",
+            "employee_id": "EMP-EOS-001",
+            "employee_name": "Engr. Juan Dela Cruz",
+            "section": "Engineering and Operations Section (EOS)",
+            "unit": "Construction Management Unit",
+            "category": "Hardware",
+            "priority": "Medium",
+            "summary": "fasfasdflasjfjasdfhashfajks",
+            "description": "asfjkashfasfhasgfasfhasofuasfuyahsfas",
+            "status": "Closed",
+            "assigned_tech": "Hardware Specialist",
+            "resolution_notes": "jfhjashdfjkahsdjkfhashdfuiha suihtqhawehuqidfpoaisgia jgiaiosghioasyhgyauishgfuasyhgfauisydfgiashyuifdyaisufuiasyuifdasuidfgyuiasghfuiasytuifghasuidfyasuhfdyas",
+            "created_at": "2026-09-29 10:27 AM",
+            "rating": null,
+            "feedback": ""
+        }
+    ],
+    "ticket_counter": 109,
+    "admin_passkey": "ADMIN2026"
+}
