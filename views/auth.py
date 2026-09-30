@@ -1,18 +1,13 @@
-import os
 import sys
+from pathlib import Path
 
-# Ensure project root directory is added to sys.path
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+# Add project root directory to sys.path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 import streamlit as st
-
-# Fallback handling for utils import
-try:
-    from utils import get_employee_by_id
-except ImportError:
-    from ..utils import get_employee_by_id
+from utils import get_employee_by_id
 
 
 def render_login_screen():
