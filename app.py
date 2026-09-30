@@ -32,7 +32,7 @@ st.set_page_config(
 )
 
 
-# --- 3. CLEAN CUSTOM BACKGROUND & UI STYLING (NO HEADER HIDING) ---
+# --- 3. CLEAN CUSTOM BACKGROUND & UI STYLING ---
 def apply_custom_background():
     media_dir = os.path.join(BASE_DIR, "Media")
 
@@ -63,11 +63,20 @@ def apply_custom_background():
         <style>
         {background_style}
 
-        /* HIDE TOP-RIGHT TOOLBAR (Share, Star, Edit, GitHub) */
-        [data-testid="stToolbar"],
-        [data-testid="stHeaderActionElements"] {{
+        /* HIDE ONLY TOP-RIGHT TOOLBAR (Share, Star, Edit, GitHub) */
+        [data-testid="stHeaderActionElements"],
+        .stAppHeader [data-testid="stHeaderActionElements"] {{
             display: none !important;
             visibility: hidden !important;
+        }}
+
+        /* FORCE KEEP SIDEBAR TOGGLE BUTTON VISIBLE */
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="stSidebarToggle"],
+        header [data-testid="stSidebarCollapseButton"] {{
+            display: flex !important;
+            visibility: visible !important;
+            opacity: 1 !important;
         }}
 
         /* OVERALL TEXT VISIBILITY */
