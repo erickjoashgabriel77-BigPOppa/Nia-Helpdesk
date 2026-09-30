@@ -1,13 +1,19 @@
 import sys
 from pathlib import Path
 
-# Add project root directory to sys.path
+# Add project root directory to sys.path at position 0
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import streamlit as st
-from utils import submit_ticket
+
+try:
+    import utils
+except ImportError:
+    from .. import utils
+
+submit_ticket = utils.submit_ticket
 
 
 def render_client_dashboard():

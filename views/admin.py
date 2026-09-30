@@ -1,13 +1,20 @@
 import sys
 from pathlib import Path
 
-# Add project root directory to sys.path
+# Add project root directory to sys.path at position 0
 ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 import streamlit as st
-from utils import get_all_tickets, update_ticket_status
+
+try:
+    import utils
+except ImportError:
+    from .. import utils
+
+get_all_tickets = utils.get_all_tickets
+update_ticket_status = utils.update_ticket_status
 
 
 def render_admin_dashboard():
