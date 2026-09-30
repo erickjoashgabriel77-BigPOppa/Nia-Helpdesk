@@ -63,6 +63,13 @@ def apply_custom_background():
         <style>
         {background_style}
 
+        /* HIDE TOP-RIGHT TOOLBAR (Share, Star, Edit, GitHub) */
+        [data-testid="stToolbar"],
+        [data-testid="stHeaderActionElements"] {{
+            display: none !important;
+            visibility: hidden !important;
+        }}
+
         /* OVERALL TEXT VISIBILITY */
         html, body, [class*="css"], .stMarkdown, p, span, label, h1, h2, h3, h4, h5, h6 {{
             color: #FFFFFF !important;
