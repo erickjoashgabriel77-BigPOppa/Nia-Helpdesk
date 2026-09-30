@@ -1,149 +1,98 @@
 import datetime
 import streamlit as st
-import streamlit.components.v1 as components
-from utils import save_local_data, generate_printable_ticket_html, generate_official_ticket_slip
+from config import AFS_SECTION, EOS_SECTION
+from utils import save_local_data
 
-def render_client_views(selected_menu):
-    """Renders client-side ticket submission, tracking, rating, and printing."""
+
+def render_client_views(client_menu):
     emp = st.session_state.logged_in_employee
 
-    if not emp:
-        st.error("No active employee session found. Please log in.")
-        return
+    if client_menu == "📝 Create Ticket":
+        st.header("📝 Create New Technical Support Request")
+        st.write(f"Logged in as: **{emp['name']}** (`{emp['id']}`)")
 
-    st.title(f"Welcome, {emp['name']}")
-    st.caption(f"Section: {emp['section']} | Unit: {emp['unit']} | Employee ID: {emp['id']}")
-    st.markdown("---")
+        with st.form("create_ticket_form"):
+            col1, col2 = st.columns(2)
+            with col1:
+                section = st.selectbox(
+                    "Section",
+                    ["Engineering & Operations Section (EOS)", "Administrative & Finance Section (AFS)"],
+                    index=0 if "Engineering" in emp.get("section", "") else 1,
+                )
+            with col2:
+                available_units = EOS_SECTION if "Engineering" in section else AFS_SECTION
+                unit = st.selectbox("Unit / Division", available_units)
 
-    if selected_menu == "📝 Create Ticket":
-        st.subheader("📝 Submit a New IT Service Request")
-
-        with st.form("create_ticket_form", clear_on_submit=True):
-            category = st.selectbox(
-                "Select Issue Category:",
+            request_type = st.selectbox(
+                "Request Category",
                 [
-                    "Hardware / Workstation",
-                    "Software & Applications",
-                    "Network & Internet",
-                    "Printer & Scanners",
-                    "User Accounts & Passwords",
-                    "Other Technical Assistance"
-                ]
+                    "Computer Hardware Repair / Maintenance",
+                    "Network & Internet Connection",
+                    "Printer / Scanner Setup & Repair",
+                    "Software Installation / Configuration",
+                    "User Account / Password Reset",
+                    "Others",
+                ],
             )
 
-            description = st.text_area(
-                "Detailed Description of the Issue:",
-                placeholder="Describe the technical issue, computer error message, or assistance required..."
-            )
+            description = st.text_area("Detailed Problem Description", placeholder="Describe the issue in detail...")
+            urgency = st.select_slider("Urgency Level", options=["Low", "Medium", "High", "Critical"], value="Medium")
 
-            submitted = st.form_submit_button("Submit Request ➔", type="primary", use_container_width=True)
+            submitted = st.form_submit_button("🚀 Submit Ticket", type="primary", use_container_width=True)
 
             if submitted:
                 if not description.strip():
-                    st.error("Please enter a detailed description of your issue before submitting.")
+                    st.error("Please provide a description of the issue.")
                 else:
-                    new_id = f"TIC-{st.session_state.ticket_counter}"
+                    new_id = f"TICK-{st.session_state.ticket_counter}"
                     st.session_state.ticket_counter += 1
 
                     new_ticket = {
                         "id": new_id,
-                        "employee_id": emp["id"],
-                        "employee_name": emp["name"],
-                        "section": emp["section"],
-                        "unit": emp["unit"],
-                        "category": category,
-                        "description": description.strip(),
+                        "client_id": emp["id"],
+                        "client_name": emp["name"],
+                        "section": section,
+                        "unit": unit,
+                        "request_type": request_type,
+                        "description": description,
+                        "urgency": urgency,
                         "status": "Pending",
-                        "date": datetime.date.today().strftime("%Y-%m-%d"),
-                        "assigned_tech": "Unassigned",
-                        "resolution_notes": "Pending inspection by IT staff.",
+                        "date_created": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
                         "rating": None,
-                        "feedback": ""
+                        "feedback": "",
                     }
 
-                    st.session_state.tickets.insert(0, new_ticket)
+                    st.session_state.tickets.append(new_ticket)
                     save_local_data()
-                    st.success(f"Ticket **{new_id}** submitted successfully! Our IT team has been notified.")
+                    st.success(f"✅ Ticket **{new_id}** created successfully!")
                     st.rerun()
 
-    elif selected_menu == "📋 My Tickets & Rate Service":
-        st.subheader("📋 My Submitted Tickets & Service History")
+    elif client_menu == "📋 My Tickets & Rate Service":
+        st.header("📋 My Service Tickets")
 
-        my_tickets = [
-            t for t in st.session_state.tickets
-            if t.get("employee_id") == emp["id"]
-        ]
+        client_tickets = [t for t in st.session_state.tickets if t.get("client_id") == emp["id"]]
 
-        if not my_tickets:
-            st.info("You have not submitted any technical support tickets yet.")
+        if not client_tickets:
+            st.info("You haven't submitted any tickets yet.")
             return
 
-        for ticket in my_tickets:
-            status_symbol = {
-                "Pending": "🟡",
-                "In Progress": "🔵",
-                "Resolved": "🟢",
-                "Cancelled": "🔴"
-            }.get(ticket.get("status", "Pending"), "⚪")
+        for t in reversed(client_tickets):
+            with st.expander(f"🎫 **{t['id']}** - {t['request_type']} ({t['status']})"):
+                st.write(f"**Date Created:** {t['date_created']}")
+                st.write(f"**Urgency:** {t['urgency']}")
+                st.write(f"**Description:** {t['description']}")
+                st.write(f"**Status:** `{t['status']}`")
 
-            expander_title = f"{status_symbol} Ticket #{ticket['id']} — {ticket['category']} ({ticket['status']})"
-
-            with st.expander(expander_title):
-                st.write(f"**Date Created:** {ticket.get('date', ticket.get('created_at', 'N/A'))}")
-                st.write(f"**Issue Description:** {ticket.get('description', '')}")
-                st.write(f"**Assigned Technician:** `{ticket.get('assigned_tech', 'Unassigned')}`")
-                st.write(f"**Resolution Notes:** {ticket.get('resolution_notes', 'N/A')}")
-
-                st.markdown("---")
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-                    if ticket.get("status") == "Pending":
-                        if st.button("❌ Cancel Ticket", key=f"cancel_{ticket['id']}", use_container_width=True):
-                            ticket["status"] = "Cancelled"
-                            save_local_data()
-                            st.warning(f"Ticket {ticket['id']} has been cancelled.")
-                            st.rerun()
-
-                with col2:
-                    docx_buffer = generate_official_ticket_slip(ticket)
-                    st.download_button(
-                        label="📄 Download Official Ticket (.docx)",
-                        data=docx_buffer,
-                        file_name=f"IT_Service_Ticket_{ticket.get('id', 'DOC')}.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        key=f"docx_client_{ticket['id']}",
-                        type="primary",
-                        use_container_width=True
-                    )
-
-                with col3:
-                    if st.button("🖨️ Print Preview", key=f"print_{ticket['id']}", use_container_width=True):
-                        key_state = f"show_print_{ticket['id']}"
-                        st.session_state[key_state] = not st.session_state.get(key_state, False)
-
-                if st.session_state.get(f"show_print_{ticket['id']}", False):
+                if t["status"] == "Completed":
                     st.markdown("---")
-                    st.caption("📄 **ISO Printable Service Slip Preview:**")
-                    html_code = generate_printable_ticket_html(ticket)
-                    components.html(html_code, height=850, scrolling=True)
+                    st.subheader("⭐ Rate IT Service")
+                    current_rating = t.get("rating", 5) or 5
+                    rating = st.slider("Rating (1 to 5 Stars)", 1, 5, current_rating, key=f"rate_{t['id']}")
+                    feedback = st.text_input("Feedback / Comments", value=t.get("feedback", ""), key=f"fb_{t['id']}")
 
-                if ticket.get("status") in ["Resolved", "Closed"]:
-                    st.markdown("---")
-                    st.subheader("⭐ Rate Completed Service")
-
-                    current_rating = ticket.get("rating")
-                    if current_rating:
-                        st.success(f"You rated this service: **{current_rating} Stars** ⭐")
-                        if ticket.get("feedback"):
-                            st.caption(f"Feedback: *\"{ticket['feedback']}\"*")
-                    else:
-                        with st.form(f"rating_form_{ticket['id']}"):
-                            rating = st.slider("Service Satisfaction (1 = Poor, 5 = Excellent):", 1, 5, 5)
-                            feedback = st.text_input("Feedback / Comments (Optional):")
-                            if st.form_submit_button("Submit Rating"):
-                                ticket["rating"] = rating
-                                ticket["feedback"] = feedback
-                                save_local_data()
-                                st.success("Thank you for your feedback!")
-                                st.rerun()
+                    if st.button("Submit Rating", key=f"btn_rate_{t['id']}"):
+                        t["rating"] = rating
+                        t["feedback"] = feedback
+                        save_local_data()
+                        st.success("Thank you for your feedback!")
+                        st.rerun()
