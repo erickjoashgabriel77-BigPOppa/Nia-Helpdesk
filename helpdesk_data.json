@@ -58,8 +58,8 @@
             "priority": "Medium",
             "summary": "fasfasdflasjfjasdfhashfajks",
             "description": "asfjkashfasfhasgfasfhasofuasfuyahsfas",
-            "status": "Closed",
-            "assigned_tech": "Hardware Specialist",
+            "status": "Resolved",
+            "assigned_tech": "Computer Maintenance Technologist I",
             "resolution_notes": "jfhjashdfjkahsdjkfhashdfuiha suihtqhawehuqidfpoaisgia jgiaiosghioasyhgyauishgfuasyhgfauisydfgiashyuifdyaisufuiasyuifdasuidfgyuiasghfuiasytuifghasuidfyasuhfdyas",
             "created_at": "2026-09-29 10:27 AM",
             "rating": null,
@@ -67,5 +67,20 @@
         }
     ],
     "ticket_counter": 109,
-    "admin_passkey": "ADMIN2026"
+    "admin_passkey": "ADMIN2026",
+    "chat_channels": {},
+    "admin_users": [
+        {
+            "id": "ADM-002",
+            "name": "KD",
+            "role": "Computer Maintenance Technologist I",
+            "passkey": "0000"
+        },
+        {
+            "id": "ADM-002",
+            "name": "Juan DELA CRUZ",
+            "role": "Computer Maintenance Technologist I",
+            "passkey": "2026"
+        }
+    ]
 }

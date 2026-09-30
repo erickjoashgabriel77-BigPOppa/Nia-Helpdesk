@@ -1,4 +1,6 @@
 streamlit
+Pillow
+pandas
 streamlit-autorefresh
-supabase
-postgrest
+python-dotenv
+requests
