@@ -1,9 +1,13 @@
+# ==========================================
+# config.py
+# ==========================================
 import os
 
+# --- 1. DIRECTORY SETUP ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATA_FILE = os.path.join(BASE_DIR, "helpdesk_data.json")
 
-# Security & Admin defaults
+# --- 2. SECURITY & ADMIN DEFAULTS ---
 ADMIN_PASSKEY = "1234"
 
 DEFAULT_ADMINS = [
@@ -15,11 +19,10 @@ DEFAULT_ADMINS = [
     }
 ]
 
-# Agency Sections
+# --- 3. AGENCY SECTIONS & UNITS ---
 EOS_SECTION = "Engineering & Operations Section (EOS)"
 AFS_SECTION = "Administrative & Finance Section (AFS)"
 
-# Official Organizational Units mapped to their respective Sections
 ORGANIZATIONAL_UNITS = {
     EOS_SECTION: [
         "Construction Management Unit",
@@ -33,13 +36,12 @@ ORGANIZATIONAL_UNITS = {
     ]
 }
 
-# Standard IT Technicians for ticket assignment
 IT_TECHNICIANS = [
     "Unassigned",
     "Computer Maintenance Technologist I"
 ]
 
-# Default fallback employee roster for local JSON store
+# --- 4. DEFAULT MOCK DATA ---
 DEFAULT_EMPLOYEES = [
     {
         "id": "EMP-EOS-001",
@@ -57,21 +59,26 @@ DEFAULT_EMPLOYEES = [
     }
 ]
 
-# Default sample ticket entries
+# Unified Ticket Schema
 DEFAULT_TICKETS = [
     {
         "id": "TIC-105",
-        "employee_id": "EMP-EOS-001",
-        "employee_name": "Engr. Juan Dela Cruz",
+        "client_id": "EMP-EOS-001",
+        "client_name": "Engr. Juan Dela Cruz",
         "section": EOS_SECTION,
         "unit": "Construction Management Unit",
-        "category": "Hardware / Workstation",
+        "position": "Engineer A",
+        "supervisor": "N/A",
+        "request_type": "Hardware Repair / Maintenance",
+        "urgency": "Medium",
+        "equipment_type": "Desktop PC",
+        "serial_number": "SN-001",
         "description": "Initial configuration and LAN deployment test for NIA-Quirino IMO Help Desk.",
-        "status": "Resolved",
-        "date": "2026-09-28",
-        "assigned_tech": "Computer Maintenance Technologist I",
-        "resolution_notes": "Verified local server connection across office network.",
-        "rating": None,
-        "feedback": ""
+        "status": "Completed",
+        "date_created": "2026-09-28 10:00 AM",
+        "action_taken": "Verified local server connection across office network.",
+        "serviced_by": "Computer Maintenance Technologist I",
+        "rating": 5,
+        "feedback": "Great service!"
     }
 ]

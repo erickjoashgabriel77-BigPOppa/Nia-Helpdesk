@@ -1,3 +1,6 @@
+# ==========================================
+# utils.py
+# ==========================================
 import os
 import json
 import base64
@@ -6,10 +9,11 @@ import streamlit as st
 from docxtpl import DocxTemplate
 from config import DATA_FILE, DEFAULT_EMPLOYEES, DEFAULT_TICKETS, ADMIN_PASSKEY, DEFAULT_ADMINS
 
+# --- 1. BASE DIRECTORY ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# --- 2. DATA I/O FUNCTIONS ---
 def load_local_data():
-    """Loads helpdesk data, admin users, and chat channels from local JSON storage."""
     if os.path.exists(DATA_FILE):
         try:
             with open(DATA_FILE, "r") as f:
@@ -27,7 +31,6 @@ def load_local_data():
     return DEFAULT_EMPLOYEES, DEFAULT_TICKETS, 107, ADMIN_PASSKEY, {}, DEFAULT_ADMINS
 
 def save_local_data():
-    """Saves current session state including admin users to local JSON file."""
     data = {
         "employees": st.session_state.get("employees", []),
         "tickets": st.session_state.get("tickets", []),
@@ -40,128 +43,82 @@ def save_local_data():
         json.dump(data, f, indent=4)
 
 def get_employee_by_id(emp_id):
-    """Finds employee dictionary by employee ID."""
     for emp in st.session_state.get("employees", []):
         if emp.get("id") == emp_id:
             return emp
     return None
 
 def logout():
-    """Clears user session state on logout."""
     st.session_state.current_role = None
     st.session_state.logged_in_employee = None
     st.session_state.is_admin_authenticated = False
     st.session_state.login_stage = "choose_role"
 
+# --- 3. TEMPLATE GENERATORS (DOCX & HTML) ---
 def generate_official_ticket_slip(ticket: dict) -> io.BytesIO:
-    """Populates the official NIA IT Service Ticket Word template (.docx) with ticket data."""
     template_path = os.path.join(BASE_DIR, "Media", "IT_Service_Ticket_Template.docx")
     
-    # Fallback to alternative filename if primary name is not present
     if not os.path.exists(template_path):
         alt_path = os.path.join(BASE_DIR, "Media", "01-DM-IT-Service-Ticket.docx")
         if os.path.exists(alt_path):
             template_path = alt_path
 
-    # Verify template existence
     if not os.path.exists(template_path):
-        raise FileNotFoundError(
-            f"Template file not found at '{template_path}'. "
-            "Please ensure 'IT_Service_Ticket_Template.docx' or '01-DM-IT-Service-Ticket.docx' exists in the 'Media' directory."
-        )
+        return None
 
     doc = DocxTemplate(template_path)
-
-    # Resolve employee profile details
-    emp_obj = get_employee_by_id(ticket.get("employee_id"))
-    designation = emp_obj.get("designation", "") if emp_obj else ticket.get("designation", "")
-
-    # Format satisfaction checkmarks
     rating = str(ticket.get("rating", ""))
 
     context = {
         # CLIENT DETAILS
-        "name": ticket.get("employee_name", "N/A"),
-        "designation": designation,
-        "date": ticket.get("date", ticket.get("created_at", "N/A")),
-        "time": ticket.get("created_time", ticket.get("time", "")),
+        "name": ticket.get("client_name", "N/A"),
+        "designation": ticket.get("position", "N/A"),
+        "date": ticket.get("date_created", "N/A").split(" ")[0] if ticket.get("date_created") else "N/A",
+        "time": ticket.get("date_created", "N/A").split(" ", 1)[1] if " " in ticket.get("date_created", "") else "",
         "section": f"{ticket.get('section', '')} / {ticket.get('unit', '')}".strip(" /"),
-        "problem_reported": ticket.get("description", ticket.get("issue_description", "N/A")),
-        "supervisor_name": ticket.get("supervisor_name", ""),
+        "problem_reported": ticket.get("description", "N/A"),
+        "supervisor_name": ticket.get("supervisor", "N/A"),
+        "urgency": ticket.get("urgency", "N/A"),
+        "status": ticket.get("status", "Pending"),
 
         # RECEIVED EQUIPMENT DETAILS
-        "date_received": ticket.get("date_received", ""),
-        "serial_number": ticket.get("serial_number", ""),
-        "equipment_type": ticket.get("equipment_type", ""),
-        "accessories": ticket.get("accessories", ""),
+        "date_received": "",
+        "serial_number": ticket.get("serial_number", "N/A"),
+        "equipment_type": ticket.get("equipment_type", "N/A"),
+        "accessories": "",
 
         # SERVICE DETAILS
-        "problem_found": ticket.get("problem_found", ""),
-        "it_remarks": ticket.get("resolution_notes", ticket.get("it_remarks", "")),
-        "it_personnel": ticket.get("assigned_tech", ticket.get("assigned_to", "IT Support Staff")),
-        "date_resolved": ticket.get("date_resolved", ""),
+        "problem_found": ticket.get("description", ""),
+        "it_remarks": ticket.get("action_taken", ""),
+        "it_personnel": ticket.get("serviced_by", ""),
+        "date_resolved": "",
         "feedback": ticket.get("feedback", ""),
 
         # SATISFACTION RATING CHECKBOXES
-        "rating_vs": "☑" if rating in ["5", "Very Satisfied"] else "☐",
-        "rating_s": "☑" if rating in ["4", "3", "Satisfied"] else "☐",
-        "rating_n": "☑" if rating in ["2", "Neutral"] else "☐",
-        "rating_p": "☑" if rating in ["1", "Poor"] else "☐",
+        "rating_vs": "☑" if rating == "5" else "☐",
+        "rating_s": "☑" if rating in ["4", "3"] else "☐",
+        "rating_n": "☑" if rating == "2" else "☐",
+        "rating_p": "☑" if rating == "1" else "☐",
     }
 
     doc.render(context)
-
     file_stream = io.BytesIO()
     doc.save(file_stream)
     file_stream.seek(0)
     return file_stream
 
 def generate_printable_ticket_html(ticket):
-    """Generates an ISO-formatted printable service slip using the assigned technician's name."""
     header_b64 = st.session_state.get("slip_header_b64", "")
     footer_b64 = st.session_state.get("slip_footer_b64", "")
 
-    if not header_b64:
-        for ext in ["png", "jpg", "jpeg"]:
-            hp = os.path.join(BASE_DIR, "Media", f"TicketSLIP_header.{ext}")
-            if os.path.exists(hp):
-                with open(hp, "rb") as f:
-                    header_b64 = base64.b64encode(f.read()).decode("utf-8")
-                break
-
-    if not footer_b64:
-        for ext in ["png", "jpg", "jpeg"]:
-            fp = os.path.join(BASE_DIR, "Media", f"TicketSLIP_Footer.{ext}")
-            if os.path.exists(fp):
-                with open(fp, "rb") as f:
-                    footer_b64 = base64.b64encode(f.read()).decode("utf-8")
-                break
-
     header_img_tag = f'<img src="data:image/png;base64,{header_b64}" style="width: 100%; max-height: 105px; object-fit: contain; display: block; margin: 0 auto;">' if header_b64 else ""
     footer_img_tag = f'<img src="data:image/png;base64,{footer_b64}" style="width: 100%; height: 100%; object-fit: fill; display: block;">' if footer_b64 else ""
-
-    emp_name = ticket.get('employee_name', '')
-    
-    emp_obj = get_employee_by_id(ticket.get('employee_id'))
-    designation = emp_obj.get('designation', '') if emp_obj else ''
-
-    req_date = ticket.get('date', ticket.get('created_at', ''))
-    office = f"{ticket.get('section', '')} / {ticket.get('unit', '')}"
-    problem = ticket.get('description', '')
-    remarks = ticket.get('resolution_notes', '')
-    
-    assigned_tech = ticket.get('assigned_tech', '')
-    if assigned_tech in ["Computer Maintenance Technologist I", "Unassigned", None]:
-        tech_display = ""
-    else:
-        tech_display = str(assigned_tech).upper()
 
     rating = str(ticket.get('rating', ''))
     vs_check = "☑" if rating == "5" else "☐"
     s_check = "☑" if rating in ["4", "3"] else "☐"
     n_check = "☑" if rating == "2" else "☐"
     p_check = "☑" if rating == "1" else "☐"
-    feedback = ticket.get('feedback', '')
 
     return f"""
     <!DOCTYPE html>
@@ -182,7 +139,7 @@ def generate_printable_ticket_html(ticket):
             .label {{ font-weight: bold; }}
             .signature-block {{ text-align: center; margin-top: 25px; }}
             .signature-line {{ border-top: 1px solid #000; width: 85%; margin: 0 auto; padding-top: 2px; font-size: 9.5pt; }}
-            .blank-space {{ min-height: 36px; word-wrap: break-word; word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; line-height: 1.3; }}
+            .blank-space {{ min-height: 36px; white-space: pre-wrap; line-height: 1.3; }}
             .html-footer {{ position: absolute; bottom: 0; left: 0; width: 100%; height: 80px; border-top: 2px solid #059669; z-index: 1; }}
             @media print {{ .no-print {{ display: none; }} html, body {{ height: 100%; width: 100%; }} .ticket-box {{ border: 2px solid #000; padding: 8px 12px 0 12px; height: 98vh; min-height: 98vh; }} }}
         </style>
@@ -203,17 +160,17 @@ def generate_printable_ticket_html(ticket):
 
                     <div class="section-title">CLIENT DETAILS</div>
                     <table>
-                        <tr><td colspan="2"><span class="label">Name:</span> {emp_name}</td></tr>
+                        <tr><td colspan="2"><span class="label">Name:</span> {ticket.get('client_name', '')}</td></tr>
                         <tr>
-                            <td style="width: 50%;"><span class="label">Designation:</span> {designation}</td>
-                            <td style="width: 50%;"><span class="label">Date:</span> {req_date}</td>
+                            <td style="width: 50%;"><span class="label">Designation:</span> {ticket.get('position', '')}</td>
+                            <td style="width: 50%;"><span class="label">Date:</span> {ticket.get('date_created', '')}</td>
                         </tr>
                         <tr>
-                            <td style="width: 50%;"><span class="label">Division/Section/Office:</span> {office}</td>
+                            <td style="width: 50%;"><span class="label">Division/Section/Office:</span> {ticket.get('section', '')} / {ticket.get('unit', '')}</td>
                             <td style="width: 50%;"><span class="label">Time:</span> </td>
                         </tr>
                         <tr>
-                            <td colspan="2"><span class="label">Problem reported:</span><br><div class="blank-space">{problem}</div></td>
+                            <td colspan="2"><span class="label">Problem reported:</span><br><div class="blank-space">{ticket.get('description', '')}</div></td>
                         </tr>
                         <tr>
                             <td style="width: 50%;">
@@ -222,7 +179,10 @@ def generate_printable_ticket_html(ticket):
                             </td>
                             <td style="width: 50%;">
                                 <span class="label">Noted by:</span>
-                                <div class="signature-block"><div class="signature-line">CLIENT'S SUPERVISOR SIGNATURE<br>OVER PRINTED NAME</div></div>
+                                <div class="signature-block">
+                                    <div style="font-weight: bold; margin-bottom: 2px;">{ticket.get('supervisor', '').upper()}</div>
+                                    <div class="signature-line">CLIENT'S SUPERVISOR SIGNATURE</div>
+                                </div>
                             </td>
                         </tr>
                     </table>
@@ -234,23 +194,22 @@ def generate_printable_ticket_html(ticket):
                             <td style="width: 50%;"><span class="label">Accessories:</span> </td>
                         </tr>
                         <tr>
-                            <td style="width: 50%;"><span class="label">Serial number:</span> </td>
-                            <td style="width: 50%;"><span class="label">Equipment type:</span> </td>
+                            <td style="width: 50%;"><span class="label">Serial number:</span> {ticket.get('serial_number', '')}</td>
+                            <td style="width: 50%;"><span class="label">Equipment type:</span> {ticket.get('equipment_type', '')}</td>
                         </tr>
                     </table>
 
                     <div class="section-title">SERVICE DETAILS</div>
                     <table>
                         <tr><td colspan="2"><span class="label">Problem found:</span><div class="blank-space"></div></td></tr>
-                        <tr><td colspan="2"><span class="label">IT personnel remarks:</span><div class="blank-space">{remarks}</div></td></tr>
+                        <tr><td colspan="2"><span class="label">IT personnel remarks:</span><div class="blank-space">{ticket.get('action_taken', '')}</div></td></tr>
                         <tr>
                             <td style="width: 50%;">
                                 <span class="label">Acknowledge by:</span>
                                 <div class="signature-block" style="margin-top: 15px;">
-                                    <div style="font-weight: bold; margin-bottom: 2px;">{tech_display}</div>
-                                    <div class="signature-line">IT PERSONNEL SIGNATURE<br>OVER PRINTED NAME</div>
+                                    <div style="font-weight: bold; margin-bottom: 2px;">{ticket.get('serviced_by', '').upper()}</div>
+                                    <div class="signature-line">IT PERSONNEL SIGNATURE</div>
                                 </div>
-                                <div style="margin-top: 10px;"><span class="label">Date and time resolved:</span> </div>
                             </td>
                             <td style="width: 50%;">
                                 <span class="label">Overall service satisfaction rate:</span><br>
@@ -263,12 +222,11 @@ def generate_printable_ticket_html(ticket):
                             </td>
                         </tr>
                         <tr>
-                            <td colspan="2"><span class="label">How can we improve our service?</span><div class="blank-space">{feedback}</div></td>
+                            <td colspan="2"><span class="label">How can we improve our service?</span><div class="blank-space">{ticket.get('feedback', '')}</div></td>
                         </tr>
                     </table>
                 </div>
             </div>
-
             <div class="html-footer">{footer_img_tag}</div>
         </div>
     </body>
